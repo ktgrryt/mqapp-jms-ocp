@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server description="new server">
+
+    <!-- Enable features -->
+    <featureManager>
+        <feature>jakartaee-9.1</feature>
+    </featureManager>
+
+    <resourceAdapter id="wmqjmsra" location="/config/wmq.jakarta.jmsra.rar"/>
+
+    <jmsConnectionFactory jndiName="jms/wmqCF" connectionManagerRef="ConMgr">
+        <properties.wmqjmsra
+            channel="DEV.APP.SVRCONN"
+            hostName="QM1"
+            port="1414"
+            userName="app"
+            password="passw0rd"
+            queueManager="QM1"
+            transportType="CLIENT"
+        />
+    </jmsConnectionFactory>
+
+    <connectionManager id="ConMgr" maxPoolSize="10"/>
+
+    <jmsQueue id="jms/queue1" jndiName="jms/queue1">
+        <properties.wmqjmsra baseQueueName="DEV.QUEUE.1" />
+    </jmsQueue>
+
+    <jmsQueue id="jms/remote1" jndiName="jms/remote1">
+        <properties.wmqjmsra baseQueueName="REMOTE.Q.1" />
+    </jmsQueue>
+
+    <basicRegistry id="basic" realm="BasicRealm">
+    </basicRegistry>
+
+    <!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*" -->
+    <httpEndpoint id="defaultHttpEndpoint"
+                  httpPort="9080"
+                  httpsPort="9445" />
+
+    <!-- Automatically expand WAR files and EAR files -->
+    <applicationManager autoExpand="true"/>
+
+    <!-- Configures the application on a specified context root -->
+    <webApplication contextRoot="/mqapp" location="mqapp.war" />
+
+    <!-- Default SSL configuration enables trust for default certificates from the Java runtime -->
+    <!-- <ssl id="defaultSSLConfig" trustDefaultCerts="true" /> -->
+</server>
