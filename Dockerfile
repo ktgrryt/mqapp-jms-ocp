@@ -1,23 +1,21 @@
-# ---------- build stage ----------
+# S2I用に修正したDockerfile
+
+# ---------- ビルドステージ ----------
 FROM maven:3.8-openjdk-17 AS builder
 WORKDIR /app
 COPY pom.xml .
 RUN mvn -q dependency:go-offline
 COPY src ./src
-# JDBC ドライバ取得とビルド
-RUN mvn -Dmaven.test.skip=true package \
- && mvn dependency:copy \
-      -Dartifact=com.mysql:mysql-connector-j:9.3.0 \
-      -DoutputDirectory=target/mysql
+# テストをスキップしてビルド
+RUN mvn -Dmaven.test.skip=true package
 
-# ---------- runtime stage ----------
+# ---------- ランタイムステージ ----------
 FROM icr.io/appcafe/open-liberty:kernel-slim-java17-openj9-ubi
 
-# JDBC ドライバ
-COPY --chown=1001:0 --from=builder /app/target/mysql/mysql-connector-j-9.3.0.jar \
-      /opt/ol/wlp/usr/shared/resources/mysql/
+# IBM MQ用のリソースアダプタ
+COPY --chown=1001:0 ibm/wmq.jakarta.jmsra.rar /config/
 
-# サーバー設定 (server.xml, jvm.options など)
+# サーバー設定ファイル
 COPY --chown=1001:0 src/main/liberty/config/ /config/
 
 # 必要な Liberty 機能をインストール
@@ -26,5 +24,14 @@ RUN features.sh
 # アプリケーション WAR
 COPY --chown=1001:0 --from=builder /app/target/*.war /config/apps/
 
-# キャッシュ作成・最終調整
+# Liberty の設定を最適化
 RUN configure.sh
+
+# S2I スクリプトとの互換性のために環境変数を設定
+ENV PORT=9080
+
+# コンテナがリッスンするポート
+EXPOSE 9080
+
+# ユーザー権限を設定
+USER 1001
