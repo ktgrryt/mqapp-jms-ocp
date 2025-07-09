@@ -1,5 +1,5 @@
 # ---------- ビルドステージ ----------
-FROM maven:3.9-openjdk-17 AS builder
+FROM maven:3.8-openjdk-17 AS builder
 WORKDIR /workspace
 COPY pom.xml .
 RUN mvn -q dependency:go-offline
