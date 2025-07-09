@@ -1,37 +1,39 @@
-# S2I用に修正したDockerfile
-
-# ---------- ビルドステージ ----------
+### ---------- build stage ----------
 FROM maven:3.8-openjdk-17 AS builder
 WORKDIR /app
+
+# 依存のダウンロードを先に済ませてキャッシュヒット率を上げる
 COPY pom.xml .
 RUN mvn -q dependency:go-offline
-COPY src ./src
-# テストをスキップしてビルド
-RUN mvn -Dmaven.test.skip=true package
 
-# ---------- ランタイムステージ ----------
+# ソース & ビルド
+COPY src ./src
+RUN mvn -q package -DskipTests
+
+# --- IBM MQ Resource Adapter & Client ----
+#   * wmq.jmsra.<ver>.rar   … JMS 2.0 Resource Adapter
+#   * com.ibm.mq.allclient  … クライアント JAR（JMS/Java 両方入っている）
+ARG MQ_VERSION=9.4.3.0
+RUN mvn -q dependency:copy            \
+      -Dartifact=com.ibm.mq:wmq.jmsra:${MQ_VERSION}:rar \
+      -DoutputDirectory=target/mq  && \
+    mvn -q dependency:copy            \
+      -Dartifact=com.ibm.mq:com.ibm.mq.allclient:${MQ_VERSION} \
+      -DoutputDirectory=target/mq
+
+### ---------- runtime stage ----------
 FROM icr.io/appcafe/open-liberty:kernel-slim-java17-openj9-ubi
 
-# IBM MQ用のリソースアダプタ
-COPY --chown=1001:0 ibm/wmq.jakarta.jmsra.rar /config/
+# MQ ライブラリを shared へ
+COPY --chown=1001:0 --from=builder /app/target/mq/wmq.jmsra*.rar \
+     /opt/ol/wlp/usr/shared/resources/mq/
+COPY --chown=1001:0 --from=builder /app/target/mq/com.ibm.mq.allclient*.jar \
+     /opt/ol/wlp/usr/shared/resources/mq/
 
-# サーバー設定ファイル
+# Liberty 設定
 COPY --chown=1001:0 src/main/liberty/config/ /config/
+RUN features.sh            # server.xml で宣言した機能をインストール
 
-# 必要な Liberty 機能をインストール
-RUN features.sh
-
-# アプリケーション WAR
+# アプリ WAR
 COPY --chown=1001:0 --from=builder /app/target/*.war /config/apps/
-
-# Liberty の設定を最適化
 RUN configure.sh
-
-# S2I スクリプトとの互換性のために環境変数を設定
-ENV PORT=9080
-
-# コンテナがリッスンするポート
-EXPOSE 9080
-
-# ユーザー権限を設定
-USER 1001

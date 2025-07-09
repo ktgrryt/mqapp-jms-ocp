@@ -5,8 +5,20 @@
     <featureManager>
         <feature>jakartaee-9.1</feature>
     </featureManager>
+    
+    <!-- shared リソースディレクトリ -->
+    <variable name="shared.resource.dir" value="/opt/ol/wlp/usr/shared/resources"/>
 
-    <resourceAdapter id="wmqjmsra" location="/config/wmq.jakarta.jmsra.rar"/>
+    <!-- IBM MQ クライアント JAR をライブラリとして定義 -->
+    <library id="mqClientLib">
+        <fileset dir="${shared.resource.dir}/mq" includes="com.ibm.mq.allclient*.jar"/>
+    </library>
+
+    <!-- Resource Adapter 登録 -->
+    <resourceAdapter id="wmqJmsRA"
+                    location="${shared.resource.dir}/mq/wmq.jmsra*.rar">
+        <classloader commonLibraryRef="mqClientLib"/>
+    </resourceAdapter>
 
     <jmsConnectionFactory jndiName="jms/wmqCF" connectionManagerRef="ConMgr">
         <properties.wmqjmsra
