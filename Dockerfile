@@ -1,8 +1,10 @@
 # ---------- ビルドステージ ----------
 FROM maven:3.8-openjdk-17 AS builder
 WORKDIR /workspace
+
 COPY pom.xml .
-RUN mvn -q dependency:go-offline
+RUN mvn -q dependency:go-offline         # 依存ライブラリを事前取得
+
 COPY src ./src
 RUN mvn -Dmaven.test.skip=true -DskipITs package
 
@@ -16,19 +18,22 @@ LABEL \
   io.openshift.expose-services="9080:http"
 
 USER root
-# shared リソース配置
+
+# MQ リソース配置用ディレクトリ
 RUN mkdir -p /opt/ol/wlp/usr/shared/resources/mq
+
+# IBM MQ リソースアダプター ＆ クライアント JAR
 COPY --chown=1001:0 ibm/wmq.jakarta.jmsra.rar \
-     ibm/com.ibm.mq.allclient*.jar \
+                     ibm/com.ibm.mq.allclient*.jar \
      /opt/ol/wlp/usr/shared/resources/mq/
 
-# サーバー設定
+# Liberty サーバー設定
 COPY --chown=1001:0 src/main/liberty/config/ /config/
 
-# アプリケーション
+# アプリケーション WAR
 COPY --chown=1001:0 --from=builder /workspace/target/mqapp.war /config/apps/
 
-# 必要な機能をインストール
+# 必要な機能の自動インストール
 RUN features.sh && configure.sh
 
 USER 1001

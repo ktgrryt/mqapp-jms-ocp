@@ -1,61 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<server description="new server">
+<server description="MQ-connected server">
 
-    <!-- Enable features -->
+    <!-- 必要な機能 -->
     <featureManager>
-        <feature>jakartaee-9.1</feature>
+        <feature>jakartaee-9.1</feature>      <!-- プラットフォーム -->
+        <feature>messaging-3.0</feature>      <!-- 汎用 RA サポート機能 --> 
+        <feature>jndi-1.0</feature>           <!-- JNDI 参照を使う場合に備え -->
     </featureManager>
     
-    <!-- shared リソースディレクトリ -->
+    <!-- 共有リソース -->
     <variable name="shared.resource.dir" value="/opt/ol/wlp/usr/shared/resources"/>
 
-    <!-- IBM MQ クライアント JAR をライブラリとして定義 -->
+    <!-- MQ クライアント JAR -->
     <library id="mqClientLib">
         <fileset dir="${shared.resource.dir}/mq" includes="com.ibm.mq.allclient*.jar"/>
     </library>
 
-    <!-- Resource Adapter 登録 -->
+    <!-- IBM MQ リソースアダプター -->
     <resourceAdapter id="wmqJmsRA"
-            location="${shared.resource.dir}/mq/wmq.jmsra.rar"> 
+                     location="${shared.resource.dir}/mq/wmq.jakarta.jmsra.rar"> 
         <classloader commonLibraryRef="mqClientLib"/>
     </resourceAdapter>
 
-    <jmsConnectionFactory jndiName="jms/wmqCF" connectionManagerRef="ConMgr">
+    <!-- コネクション・ファクトリ -->
+    <jmsConnectionFactory id="wmqCF"
+                          jndiName="jms/wmqCF"
+                          resourceAdapterRef="wmqJmsRA"
+                          connectionManagerRef="ConMgr">
         <properties.wmqjmsra
             channel="DEV.APP.SVRCONN"
             hostName="QM1"
             port="1414"
-            userName="app"
-            password="passw0rd"
             queueManager="QM1"
             transportType="CLIENT"
-        />
+            userName="app"
+            password="passw0rd"/>
     </jmsConnectionFactory>
 
     <connectionManager id="ConMgr" maxPoolSize="10"/>
 
-    <jmsQueue id="jms/queue1" jndiName="jms/queue1">
-        <properties.wmqjmsra baseQueueName="DEV.QUEUE.1" />
+    <!-- キュー定義 -->
+    <jmsQueue id="queue1" jndiName="jms/queue1">
+        <properties.wmqjmsra
+            baseQueueManagerName="QM1"
+            baseQueueName="DEV.QUEUE.1"/>
     </jmsQueue>
 
-    <jmsQueue id="jms/remote1" jndiName="jms/remote1">
-        <properties.wmqjmsra baseQueueName="REMOTE.Q.1" />
+    <jmsQueue id="remote1" jndiName="jms/remote1">
+        <properties.wmqjmsra
+            baseQueueManagerName="QM1"
+            baseQueueName="REMOTE.Q.1"/>
     </jmsQueue>
 
-    <basicRegistry id="basic" realm="BasicRealm">
-    </basicRegistry>
+    <!-- (任意) ユーザレジストリ -->
+    <basicRegistry id="basic" realm="BasicRealm"/>
 
-    <!-- To access this server from a remote client add a host attribute to the following element, e.g. host="*" -->
+    <!-- HTTP ポート -->
     <httpEndpoint id="defaultHttpEndpoint"
+                  host="*"          
                   httpPort="9080"
-                  httpsPort="9445" />
+                  httpsPort="9445"/>
 
-    <!-- Automatically expand WAR files and EAR files -->
+    <!-- WAR を /mqapp で公開 -->
+    <webApplication contextRoot="/mqapp" location="mqapp.war"/>
+
+    <!-- WAR / EAR 自動展開 -->
     <applicationManager autoExpand="true"/>
-
-    <!-- Configures the application on a specified context root -->
-    <webApplication contextRoot="/mqapp" location="mqapp.war" />
-
-    <!-- Default SSL configuration enables trust for default certificates from the Java runtime -->
-    <!-- <ssl id="defaultSSLConfig" trustDefaultCerts="true" /> -->
 </server>
