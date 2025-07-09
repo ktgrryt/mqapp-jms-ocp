@@ -14,19 +14,27 @@ RUN mvn -q package -DskipTests
 #   * wmq.jmsra.<ver>.rar   … JMS 2.0 Resource Adapter
 #   * com.ibm.mq.allclient  … クライアント JAR（JMS/Java 両方入っている）
 ARG MQ_VERSION=9.4.3.0
-RUN mvn -q dependency:copy \
-      -Dartifact=com.ibm.mq:wmq.jmsra:${MQ_VERSION}:rar \
-      -DoutputDirectory=target/mq && \
-    mv target/mq/wmq.jmsra-${MQ_VERSION}.rar target/mq/wmq.jmsra.rar
 
+# JAR/RAR を取得して「決まった名前」で配置
+RUN set -eux; \
+    mvn -q dependency:copy \
+        -Dartifact=com.ibm.mq:wmq.jmsra:${MQ_VERSION}:rar \
+        -DoutputDirectory=target/mq && \
+    mvn -q dependency:copy \
+        -Dartifact=com.ibm.mq:com.ibm.mq.allclient:${MQ_VERSION}:jar \
+        -DoutputDirectory=target/mq && \
+    mv target/mq/wmq.jmsra-${MQ_VERSION}.rar      target/mq/wmq.jmsra.rar && \
+    mv target/mq/com.ibm.mq.allclient-${MQ_VERSION}.jar \
+       target/mq/com.ibm.mq.allclient.jar
+
+### ---------- runtime stage ----------
 ### ---------- runtime stage ----------
 FROM icr.io/appcafe/open-liberty:kernel-slim-java17-openj9-ubi
 
-# MQ ライブラリを shared へ
-COPY --chown=1001:0 --from=builder /app/target/mq/wmq.jmsra*.rar \
+# ディレクトリごとコピーすればワイルドカード不要
+COPY --chown=1001:0 --from=builder /app/target/mq/ \
      /opt/ol/wlp/usr/shared/resources/mq/
-COPY --chown=1001:0 --from=builder /app/target/mq/com.ibm.mq.allclient*.jar \
-     /opt/ol/wlp/usr/shared/resources/mq/
+
 
 # Liberty 設定
 COPY --chown=1001:0 src/main/liberty/config/ /config/
