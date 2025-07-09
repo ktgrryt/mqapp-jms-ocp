@@ -4,7 +4,9 @@
     <!-- Enable features -->
     <featureManager>
         <feature>jakartaee-9.1</feature>
-    </featureManager>
+        <feature>jms-2.0</feature>
+        <feature>jndi-1.0</feature>
+</featureManager>
     
     <!-- shared リソースディレクトリ -->
     <variable name="shared.resource.dir" value="/opt/ol/wlp/usr/shared/resources"/>
@@ -16,7 +18,7 @@
 
     <!-- Resource Adapter 登録 -->
     <resourceAdapter id="wmqJmsRA"
-                    location="${shared.resource.dir}/mq/wmq.jmsra*.rar">
+            location="${shared.resource.dir}/mq/wmq.jmsra.rar"> 
         <classloader commonLibraryRef="mqClientLib"/>
     </resourceAdapter>
 

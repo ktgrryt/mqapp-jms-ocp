@@ -14,12 +14,10 @@ RUN mvn -q package -DskipTests
 #   * wmq.jmsra.<ver>.rar   … JMS 2.0 Resource Adapter
 #   * com.ibm.mq.allclient  … クライアント JAR（JMS/Java 両方入っている）
 ARG MQ_VERSION=9.4.3.0
-RUN mvn -q dependency:copy            \
+RUN mvn -q dependency:copy \
       -Dartifact=com.ibm.mq:wmq.jmsra:${MQ_VERSION}:rar \
-      -DoutputDirectory=target/mq  && \
-    mvn -q dependency:copy            \
-      -Dartifact=com.ibm.mq:com.ibm.mq.allclient:${MQ_VERSION} \
-      -DoutputDirectory=target/mq
+      -DoutputDirectory=target/mq && \
+    mv target/mq/wmq.jmsra-${MQ_VERSION}.rar target/mq/wmq.jmsra.rar
 
 ### ---------- runtime stage ----------
 FROM icr.io/appcafe/open-liberty:kernel-slim-java17-openj9-ubi
