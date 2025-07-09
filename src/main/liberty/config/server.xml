@@ -25,9 +25,8 @@
     <!-- コネクション・ファクトリ -->
     <jmsConnectionFactory id="wmqCF"
                           jndiName="jms/wmqCF"
-                          resourceAdapterRef="wmqJmsRA"
                           connectionManagerRef="ConMgr">
-        <properties.wmqjmsra
+        <properties.wmqJmsRA
             channel="DEV.APP.SVRCONN"
             hostName="qm1-ibm-mq"
             port="1414"
@@ -41,13 +40,13 @@
 
     <!-- キュー定義 -->
     <jmsQueue id="queue1" jndiName="jms/queue1">
-        <properties.wmqjmsra
+        <properties.wmqJmsRA
             baseQueueManagerName="QM1"
             baseQueueName="DEV.QUEUE.1"/>
     </jmsQueue>
 
     <jmsQueue id="remote1" jndiName="jms/remote1">
-        <properties.wmqjmsra
+        <properties.wmqJmsRA
             baseQueueManagerName="QM1"
             baseQueueName="REMOTE.Q.1"/>
     </jmsQueue>
