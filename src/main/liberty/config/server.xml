@@ -6,6 +6,7 @@
         <feature>jakartaee-9.1</feature>      <!-- プラットフォーム -->
         <feature>messaging-3.0</feature>      <!-- 汎用 RA サポート機能 --> 
         <feature>jndi-1.0</feature>           <!-- JNDI 参照を使う場合に備え -->
+        <feature>monitor-1.0</feature>
     </featureManager>
     
     <!-- 共有リソース -->
