@@ -29,7 +29,7 @@
                           connectionManagerRef="ConMgr">
         <properties.wmqJmsRA
             channel="DEV.APP.SVRCONN"
-            hostName="${env.MQ_HOST}"
+            hostName="qm1-ibm-mq"
             port="1414"
             queueManager="QM1"
             transportType="CLIENT"
