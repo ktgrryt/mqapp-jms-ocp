@@ -19,6 +19,14 @@ LABEL \
 
 USER root
 
+# Instana Java agent を配置する推奨パスを作成
+RUN mkdir -p /opt/instana/agent && \
+    chown -R 1001:0 /opt/instana && \
+    chmod -R g+rwX /opt/instana
+
+COPY --chown=1001:0 instana/javaagent.jar /opt/instana/agent/javaagent.jar
+RUN chmod 444 /opt/instana/agent/javaagent.jar
+
 # MQ リソース配置用ディレクトリ
 RUN mkdir -p /opt/ol/wlp/usr/shared/resources/mq
 
@@ -35,6 +43,9 @@ COPY --chown=1001:0 --from=builder /workspace/target/mqapp.war /config/apps/
 
 # 必要な機能の自動インストール
 RUN features.sh && configure.sh
+
+# ここで初めて -javaagent を有効化（JAR が確実に存在した後で設定）
+ENV JAVA_TOOL_OPTIONS="-javaagent:/opt/instana/agent/javaagent.jar"
 
 USER 1001
 EXPOSE 9080
